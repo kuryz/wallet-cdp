@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { CdpClient } from "@coinbase/cdp-sdk";
 import dotenv from "dotenv";
 import { db } from "./db.ts";
+import { logError } from "./logger.ts";
 
 dotenv.config();
 
@@ -43,23 +44,45 @@ app.get("/health", (_req, res) => {
 });
 
 // Create EVM account
-app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
+app.post(
+  "/accounts/evm",
+  apiKeyAuth,
+  async (_req: Request, res: Response): Promise<void> => {
     try {
       const account = await cdp.evm.createAccount();
       await storeAddress(account.address, "evm");
+
       res.json({
         address: account.address,
       });
     } catch (err) {
       console.error(err);
+      logError(err, "POST /accounts/evm");
       res.status(500).json({ error: "Failed to create EVM account" });
     }
-});
+  }
+);
 
-app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
+// app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
+//     try {
+//       const account = await cdp.solana.createAccount();
+//       await storeAddress(account.address, "solana");
+//       res.json({
+//         address: account.address,
+//       });
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ error: "Failed to create Solana account" });
+//     }
+// });
+app.post(
+  "/accounts/solana",
+  apiKeyAuth,
+  async (_req: Request, res: Response): Promise<void> => {
     try {
       const account = await cdp.solana.createAccount();
       await storeAddress(account.address, "solana");
+
       res.json({
         address: account.address,
       });
