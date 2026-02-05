@@ -1,0 +1,7 @@
+{
+    "watch": ["*.ts", "**/*.ts"],
+    "ext": "ts",
+    "exec": "node_modules\\.bin\\ts-node.cmd main.ts",
+    "ignore": ["node_modules"]
+  }
+  
