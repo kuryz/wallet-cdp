@@ -1,11 +1,11 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { CdpClient } from "@coinbase/cdp-sdk";
-import dotenv from "dotenv";
+import "dotenv/config";
 import { db } from "./db.ts";
 import { logError } from "./logger.ts";
 
-dotenv.config();
+// dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,7 +17,7 @@ const API_KEY = process.env.API_KEY;
 function requiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    throw new Error(`Missing required environment variables: ${name}`);
   }
   return value;
 }

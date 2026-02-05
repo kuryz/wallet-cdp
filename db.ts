@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import * as mysql from "mysql2/promise";
 import type { Pool } from "mysql2/promise";
 
