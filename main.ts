@@ -61,7 +61,13 @@ app.post(
   apiKeyAuth,
   async (_req: Request, res: Response): Promise<void> => {
     try {
-      const account = await cdp.evm.createAccount();
+      const firstOwner = await cdp.evm.getOrCreateAccount({
+        name: "Finp_user"
+      });
+      // const account = await cdp.evm.createAccount();
+      const account = await cdp.evm.createSmartAccount({
+        owner: firstOwner
+      });
       await storeAddress(account.address, "evm");
 
       res.json({
