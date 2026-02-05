@@ -14,7 +14,19 @@ const API_KEY = process.env.API_KEY;
 // Initialize the CDP client, which automatically loads
 // the API Key and Wallet Secret from the environment
 // variables.
-const cdp = new CdpClient();
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+const cdp = new CdpClient({
+  apiKeyId: requiredEnv("CDP_API_KEY_ID"),
+  apiKeySecret: requiredEnv("CDP_API_KEY_SECRET"),
+  walletSecret: requiredEnv("CDP_WALLET_SECRET"),
+});
 app.use(express.json());
 
 /**
