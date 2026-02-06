@@ -75,6 +75,66 @@ async function storeAddress(address: string, smart: string, chain: "evm" | "sola
     
 }
 
+function generateCdpApiToken() {
+  const apiKeyId = process.env.CDP_API_KEY_ID!;
+  const apiKeySecret = process.env.CDP_API_KEY_SECRET!;
+
+  const header = {
+    alg: "HS256",
+    typ: "JWT",
+  };
+
+  const payload = {
+    iss: apiKeyId,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 60, // valid 60s
+  };
+
+  const base64url = (obj: any) =>
+    Buffer.from(JSON.stringify(obj))
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+
+  const encodedHeader = base64url(header);
+  const encodedPayload = base64url(payload);
+
+  const signature = crypto
+    .createHmac("sha256", apiKeySecret)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  return `${encodedHeader}.${encodedPayload}.${signature}`;
+}
+
+async function getWalletTokenBalances(
+  network: string,
+  address: string,
+  token: string
+) {
+  const url = `https://api.cdp.coinbase.com/platform/v2/data/evm/token-balances/${network}/${address}?pageSize=20`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`CDP error ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
+
+
 // Health check
 app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
@@ -138,20 +198,33 @@ app.post(
     }
 });
 
-//webhook
-// app.post("/webhooks/cdp", express.json(), (req, res) => {
-//   const event = req.body;
+//get balance
+app.post("/get-token-balance", apiKeyAuth, async (req: Request, res: Response) => {
+  try {
+    const { address, network = "base" } = req.body;
 
-//   console.log("CDP webhook:", event);
-//   logError(event, "POST /webhooks");
-//   // 1. Verify webhook signature (IMPORTANT)
-//   // 2. Check event type (deposit)
-//   // 3. Match address in your DB
-//   // 4. Credit user balance
-//   // 5. Mark tx hash as processed (idempotency)
+    if (!address) {
+      return res.status(400).json({ error: "address is required" });
+    }
 
-//   res.sendStatus(200);
-// });
+    const token = generateCdpApiToken();
+
+    const balances = await getWalletTokenBalances(
+      network,
+      address,
+      token
+    );
+
+    res.json({
+      address,
+      network,
+      balances,
+    });
+  } catch (err: any) {
+    console.error("Balance fetch failed:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Webhook endpoint
 // Mount your webhook route
