@@ -57,12 +57,22 @@ function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
-async function storeAddress(address: string, chain: "evm" | "solana") {
+async function storeAddress(address: string, smart: string, chain: "evm" | "solana") {
+
+  if (smart == '') {
     await db.execute(
-        `INSERT IGNORE INTO deposit_addresses (address, chain)
-         VALUES (?, ?)`,
-        [address, chain]
+      `INSERT IGNORE INTO deposit_addresses (address, chain)
+       VALUES (?, ?)`,
+      [address, chain]
     );
+  }else{
+    await db.execute(
+      `INSERT IGNORE INTO deposit_addresses (address, smart_address, chain)
+       VALUES (?, ?, ?)`,
+      [address, smart, chain]
+    );
+  }
+    
 }
 
 // Health check
@@ -83,7 +93,7 @@ app.post(
       const account = await cdp.evm.createSmartAccount({
         owner
       });
-      await storeAddress(account.address, "evm");
+      await storeAddress(owner.address, account.address, "evm");
       
       res.json({
         address: account.address,
@@ -117,7 +127,7 @@ app.post(
   async (_req: Request, res: Response): Promise<void> => {
     try {
       const account = await cdp.solana.createAccount();
-      await storeAddress(account.address, "solana");
+      await storeAddress(account.address, '', "solana");
 
       res.json({
         address: account.address,
