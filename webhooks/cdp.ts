@@ -41,7 +41,7 @@ interface DepositAddressRow extends RowDataPacket {
     next();
 }
 // ... all the webhook code from before, but replace `app.post` with `router.post`
-router.post("/cdp", verifyCdpSignature, async (req: Request, res: Response) => {
+router.post("/cdp", async (req: Request, res: Response) => {
   // webhook logic here
   const event: CdpWebhookEvent = req.body;
 
