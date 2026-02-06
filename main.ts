@@ -3,8 +3,8 @@ import type { Request, Response, NextFunction } from "express";
 import { CdpClient } from "@coinbase/cdp-sdk";
 // const { generateJwt } = require("@coinbase/cdp-sdk/auth");
 import "dotenv/config";
-import { db } from "./db.ts";
-import { logError } from "./logger.ts";
+import { db } from "./db.js";
+import { logError } from "./logger.js";
 
 // dotenv.config();
 
