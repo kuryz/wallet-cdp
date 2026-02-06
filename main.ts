@@ -1,6 +1,7 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { CdpClient } from "@coinbase/cdp-sdk";
+const { generateJwt } = require("@coinbase/cdp-sdk/auth");
 import "dotenv/config";
 import { db } from "./db.ts";
 import { logError } from "./logger.ts";
@@ -61,17 +62,20 @@ app.post(
   apiKeyAuth,
   async (_req: Request, res: Response): Promise<void> => {
     try {
-      const firstOwner = await cdp.evm.getOrCreateAccount({
-        name: "Finp_user"
-      });
-      // const account = await cdp.evm.createAccount();
+      // const firstOwner = await cdp.evm.getOrCreateAccount({
+      //   name: "Finp_user"
+      // });
+      const owner = await cdp.evm.createAccount();
       const account = await cdp.evm.createSmartAccount({
-        owner: firstOwner
+        owner
       });
       await storeAddress(account.address, "evm");
-
+      
       res.json({
         address: account.address,
+        "Owner EOA": owner.address,
+        "Smart wallet": account.address,
+        "Type": account.type
       });
     } catch (err) {
       console.error(err);
