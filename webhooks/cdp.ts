@@ -1,53 +1,38 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response } from "express";
 import { db } from "../db.js";
 import { logError } from "../logger.js";
-import crypto from "crypto";
 import { RowDataPacket } from "mysql2";
 
 const router = express.Router();
+
 interface DepositAddressRow extends RowDataPacket {
-    user_id: number;
-  }
-  
-  interface ProcessedTxRow extends RowDataPacket {
-    tx_hash: string;
-  }
-  
-  interface CdpWebhookEvent {
-    type: string;
-    data: {
-      address: string;
-      txHash: string;
-      amount: number;
-      chain: string;
-    };
-  }
-  
-  // Middleware to verify CDP webhook signature
-  function verifyCdpSignature(req: Request, res: Response, next: NextFunction) {
-    const signatureHeader = req.header("X-Hook-Signature");
-    const secret = process.env.CDP_WEBHOOK_SECRET;
-  
-    if (!signatureHeader || !secret) return res.status(400).send("Missing signature");
-  
-    const payload = JSON.stringify(req.body);
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(payload)
-      .digest("hex");
-  
-    if (expectedSignature !== signatureHeader) return res.status(401).send("Invalid signature");
-  
-    next();
+  user_id: number;
 }
-// ... all the webhook code from before, but replace `app.post` with `router.post`
+
+interface ProcessedTxRow extends RowDataPacket {
+  tx_hash: string;
+}
+
+interface CdpWebhookEvent {
+  type: string;
+  data: {
+    address: string;
+    txHash: string;
+    amount: number;
+    chain: string;
+  };
+}
+
+// Use plain JSON parsing for incoming webhook
+router.use("/webhooks/cdp", express.json());
+
 router.post("/cdp", async (req: Request, res: Response) => {
-  // webhook logic here
   const event: CdpWebhookEvent = req.body;
 
   try {
+    // Only process deposit events
     if (event.type !== "onchain.activity.detected") {
-      return res.sendStatus(200); // ignore other events
+      return res.sendStatus(200);
     }
 
     const { address, txHash, amount, chain } = event.data;
@@ -76,7 +61,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
 
     const userId = userRows[0]?.id;
 
-    // 3️⃣ Credit user balance
+    // 3️⃣ Credit user balance (optional)
     // await db.execute(
     //   "UPDATE users SET balance = balance + ? WHERE id = ?",
     //   [amount, userId]
@@ -88,7 +73,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
       [txHash, chain, address, amount]
     );
 
-    console.log(`Credited ${amount} to user ${userId} for tx ${txHash}`);
+    console.log(`Processed deposit of ${amount} on ${chain} to user ${userId} (tx: ${txHash})`);
 
     res.sendStatus(200);
   } catch (err) {
