@@ -65,7 +65,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
 
     // 2️⃣ Lookup user by deposit address
     const [userRows] = await db.execute<DepositAddressRow[]>(
-      "SELECT id as user_id FROM deposit_addresses WHERE address = ?",
+      "SELECT id FROM deposit_addresses WHERE address = ?",
       [address]
     );
 
@@ -74,7 +74,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
       return res.sendStatus(200);
     }
 
-    const userId = userRows[0]?.user_id;
+    const userId = userRows[0]?.id;
 
     // 3️⃣ Credit user balance
     // await db.execute(
