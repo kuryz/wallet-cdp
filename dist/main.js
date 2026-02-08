@@ -7,6 +7,7 @@ import { db } from "./db.js";
 import { logError } from "./logger.js";
 // import { RowDataPacket } from "mysql2";
 import webhookRouter from "./webhooks/cdp.js";
+import { registerAddresses } from './alchemy/addressRegistry.js';
 // dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,9 +38,51 @@ function apiKeyAuth(req, res, next) {
     }
     next();
 }
-async function storeAddress(address, chain) {
-    await db.execute(`INSERT IGNORE INTO deposit_addresses (address, chain)
-         VALUES (?, ?)`, [address, chain]);
+async function storeAddress(address, smart, chain) {
+    if (smart == '') {
+        await db.execute(`INSERT IGNORE INTO deposit_addresses (address, chain)
+       VALUES (?, ?)`, [address, chain]);
+    }
+    else {
+        await db.execute(`INSERT IGNORE INTO deposit_addresses (address, smart_address, chain)
+       VALUES (?, ?, ?)`, [address, smart, chain]);
+    }
+}
+function generateCdpApiToken() {
+    const apiKeyId = requiredEnv("CDP_API_KEY_ID");
+    const apiKeySecret = requiredEnv("CDP_API_KEY_SECRET");
+    const header = {
+        alg: "HS256",
+        typ: "JWT",
+    };
+    const payload = {
+        iss: apiKeyId,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 60, // valid 60s
+    };
+    const base64url = (obj) => Buffer.from(JSON.stringify(obj))
+        .toString("base64")
+        .replace(/=/g, "")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
+    const encodedHeader = base64url(header);
+    const encodedPayload = base64url(payload);
+    const signature = crypto
+        .createHmac("sha256", apiKeySecret)
+        .update(`${encodedHeader}.${encodedPayload}`)
+        .digest("base64")
+        .replace(/=/g, "")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
+    return `${encodedHeader}.${encodedPayload}.${signature}`;
+}
+async function getWalletTokenBalances(chainnetwork, wallet_address) {
+    const firstPage = await cdp.evm.listTokenBalances({
+        address: wallet_address,
+        network: chainnetwork,
+        pageSize: 10,
+    });
+    return firstPage;
 }
 // Health check
 app.get("/health", (_req, res) => {
@@ -55,7 +98,10 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
         const account = await cdp.evm.createSmartAccount({
             owner
         });
-        await storeAddress(account.address, "evm");
+        await storeAddress(owner.address, account.address, "evm");
+        await registerAddresses([
+            account.address
+        ]);
         res.json({
             address: account.address,
             "Owner EOA": owner.address,
@@ -84,7 +130,10 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
 app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
     try {
         const account = await cdp.solana.createAccount();
-        await storeAddress(account.address, "solana");
+        await storeAddress(account.address, '', "solana");
+        await registerAddresses([
+            account.address
+        ]);
         res.json({
             address: account.address,
         });
@@ -94,26 +143,34 @@ app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
         res.status(500).json({ error: "Failed to create Solana account" });
     }
 });
-//webhook
-// app.post("/webhooks/cdp", express.json(), (req, res) => {
-//   const event = req.body;
-//   console.log("CDP webhook:", event);
-//   logError(event, "POST /webhooks");
-//   // 1. Verify webhook signature (IMPORTANT)
-//   // 2. Check event type (deposit)
-//   // 3. Match address in your DB
-//   // 4. Credit user balance
-//   // 5. Mark tx hash as processed (idempotency)
-//   res.sendStatus(200);
-// });
+//get balance
+app.post("/get-token-balance", apiKeyAuth, async (req, res) => {
+    try {
+        const { address, network = "base" } = req.body;
+        if (!address) {
+            return res.status(400).json({ error: "address is required" });
+        }
+        const token = generateCdpApiToken();
+        const balances = await getWalletTokenBalances(network, address);
+        res.json({
+            address,
+            network,
+            balances,
+        });
+    }
+    catch (err) {
+        console.error("Balance fetch failed:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
 // Webhook endpoint
 // Mount your webhook route
 app.use("/webhooks", webhookRouter);
 // Route to register CDP webhook
 app.post("/register-webhook", apiKeyAuth, async (req, res) => {
     try {
-        await registerCdpWebhook();
-        res.json({ status: "ok", message: "CDP webhook registration triggered" });
+        const response = await registerCdpWebhook();
+        res.json({ status: "ok", message: "CDP webhook registration triggered", webhooksec: response?.metadata?.secret });
     }
     catch (err) {
         console.error("Error registering CDP webhook:", err);
@@ -156,9 +213,11 @@ async function registerCdpWebhook() {
         if (data?.metadata?.secret) {
             console.log("Save this CDP_WEBHOOK_SECRET:", data.metadata.secret);
         }
+        return data;
     }
     catch (err) {
         console.error("Failed to register CDP webhook:", err);
+        logError(err, 'webhook');
     }
 }
 app.listen(port, () => {

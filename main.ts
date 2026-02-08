@@ -8,6 +8,7 @@ import { db } from "./db.js";
 import { logError } from "./logger.js";
 // import { RowDataPacket } from "mysql2";
 import webhookRouter from "./webhooks/cdp.js";
+import { registerAddresses, unregisterAddresses, listRegisteredAddresses } from './alchemy/addressRegistry.js';
 
 // dotenv.config();
 
@@ -76,8 +77,8 @@ async function storeAddress(address: string, smart: string, chain: "evm" | "sola
 }
 
 function generateCdpApiToken() {
-  const apiKeyId = process.env.CDP_API_KEY_ID!;
-  const apiKeySecret = process.env.CDP_API_KEY_SECRET!;
+  const apiKeyId = requiredEnv("CDP_API_KEY_ID");
+  const apiKeySecret = requiredEnv("CDP_API_KEY_SECRET");
 
   const header = {
     alg: "HS256",
@@ -111,27 +112,13 @@ function generateCdpApiToken() {
   return `${encodedHeader}.${encodedPayload}.${signature}`;
 }
 
-async function getWalletTokenBalances(
-  network: string,
-  address: string,
-  token: string
-) {
-  const url = `https://api.cdp.coinbase.com/platform/v2/data/evm/token-balances/${network}/${address}?pageSize=20`;
-
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`CDP error ${res.status}: ${text}`);
-  }
-
-  return res.json();
+async function getWalletTokenBalances(chainnetwork: any, wallet_address: any) {
+	const firstPage = await cdp.evm.listTokenBalances({
+    address: wallet_address,
+		network: chainnetwork,
+  	pageSize: 10,
+	});
+  return firstPage;
 }
 
 
@@ -154,6 +141,9 @@ app.post(
         owner
       });
       await storeAddress(owner.address, account.address, "evm");
+      await registerAddresses([
+        account.address
+      ]);
       
       res.json({
         address: account.address,
@@ -189,6 +179,10 @@ app.post(
       const account = await cdp.solana.createAccount();
       await storeAddress(account.address, '', "solana");
 
+      await registerAddresses([
+        account.address
+      ]);
+
       res.json({
         address: account.address,
       });
@@ -211,8 +205,7 @@ app.post("/get-token-balance", apiKeyAuth, async (req: Request, res: Response) =
 
     const balances = await getWalletTokenBalances(
       network,
-      address,
-      token
+      address
     );
 
     res.json({

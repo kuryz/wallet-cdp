@@ -1,7 +1,6 @@
 {
-    "watch": ["*.ts", "**/*.ts"],
-    "ext": "ts",
-    "exec": "node_modules\\.bin\\ts-node.cmd main.ts",
-    "ignore": ["node_modules"]
-  }
-  
+  "watch": ["./"],
+  "ext": "ts",
+  "ignore": ["dist"],
+  "exec": "ts-node --esm main.ts"
+}

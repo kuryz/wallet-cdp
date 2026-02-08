@@ -1,58 +1,94 @@
 import express from "express";
 import { db } from "../db.js";
-import { logError } from "../logger.js";
-import crypto from "crypto";
 const router = express.Router();
-// Middleware to verify CDP webhook signature
-function verifyCdpSignature(req, res, next) {
-    const signatureHeader = req.header("X-Hook-Signature");
-    const secret = process.env.CDP_WEBHOOK_SECRET;
-    if (!signatureHeader || !secret)
-        return res.status(400).send("Missing signature");
-    const payload = JSON.stringify(req.body);
-    const expectedSignature = crypto
-        .createHmac("sha256", secret)
-        .update(payload)
-        .digest("hex");
-    if (expectedSignature !== signatureHeader)
-        return res.status(401).send("Invalid signature");
-    next();
-}
-// ... all the webhook code from before, but replace `app.post` with `router.post`
-router.post("/cdp", verifyCdpSignature, async (req, res) => {
-    // webhook logic here
-    const event = req.body;
+// Use plain JSON parsing for incoming webhook
+router.use("/webhooks/cdp", express.json());
+/* router.post("/cdp", async (req: Request, res: Response) => {
+  const event: CdpWebhookEvent = req.body;
+
+  try {
+    // Only process deposit events
+    if (event.type !== "onchain.activity.detected") {
+      return res.sendStatus(200);
+    }
+
+    const { address, txHash, amount, chain } = event.data;
+
+    // 1️⃣ Check idempotency
+    const [processedRows] = await db.execute<ProcessedTxRow[]>(
+      "SELECT tx_hash FROM processed_transactions WHERE tx_hash = ?",
+      [txHash]
+    );
+
+    if (processedRows.length > 0) {
+      console.log("Transaction already processed:", txHash);
+      return res.sendStatus(200);
+    }
+
+    // 2️⃣ Lookup user by deposit address
+    const [userRows] = await db.execute<DepositAddressRow[]>(
+      "SELECT id FROM deposit_addresses WHERE address = ?",
+      [address]
+    );
+
+    if (userRows.length === 0) {
+      console.warn("No user found for address:", address);
+      return res.sendStatus(200);
+    }
+
+    const userId = userRows[0]?.id;
+
+    // 3️⃣ Credit user balance (optional)
+    // await db.execute(
+    //   "UPDATE users SET balance = balance + ? WHERE id = ?",
+    //   [amount, userId]
+    // );
+
+    // 4️⃣ Mark tx hash as processed
+    await db.execute(
+      "INSERT INTO processed_transactions (tx_hash, chain, address, amount) VALUES (?, ?, ?, ?)",
+      [txHash, chain, address, amount]
+    );
+
+    console.log(`Processed deposit of ${amount} on ${chain} to user ${userId} (tx: ${txHash})`);
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Error processing webhook:", err);
+    logError(err, "POST /webhooks/cdp");
+    res.sendStatus(500);
+  }
+}); */
+router.post("/cdp", async (req, res) => {
+    const webhookEvent = req.body;
     try {
-        if (event.type !== "onchain.activity.detected") {
-            return res.sendStatus(200); // ignore other events
-        }
-        const { address, txHash, amount, chain } = event.data;
-        // 1️⃣ Check idempotency
-        const [processedRows] = await db.execute("SELECT tx_hash FROM processed_transactions WHERE tx_hash = ?", [txHash]);
-        if (processedRows.length > 0) {
-            console.log("Transaction already processed:", txHash);
+        // Only process "ADDRESS_ACTIVITY" events
+        if (webhookEvent.type !== "ADDRESS_ACTIVITY") {
             return res.sendStatus(200);
         }
-        // 2️⃣ Lookup user by deposit address
-        const [userRows] = await db.execute("SELECT id as user_id FROM deposit_addresses WHERE address = ?", [address]);
-        if (userRows.length === 0) {
-            console.warn("No user found for address:", address);
-            return res.sendStatus(200);
+        console.log("Received webhook of type:", webhookEvent.type);
+        const { activity, network } = webhookEvent.event;
+        for (const tx of activity) {
+            const { toAddress: address, hash: txHash, value: amount } = tx;
+            // 1️⃣ Idempotency check
+            const [processedRows] = await db.execute("SELECT tx_hash FROM processed_transactions WHERE tx_hash = ?", [txHash]);
+            if (processedRows.length > 0)
+                continue;
+            // 2️⃣ Lookup user
+            const [userRows] = await db.execute("SELECT id FROM deposit_addresses WHERE address = ?", [address]);
+            if (userRows.length === 0)
+                continue;
+            const userId = userRows[0]?.id;
+            // 3️⃣ Credit user balance (optional)
+            // await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", [amount, userId]);
+            // 4️⃣ Mark tx as processed
+            await db.execute("INSERT INTO processed_transactions (tx_hash, chain, address, amount) VALUES (?, ?, ?, ?)", [txHash, network, address, amount]);
+            console.log(`Processed deposit of ${amount} on ${network} to user ${userId} (tx: ${txHash})`);
         }
-        const userId = userRows[0]?.user_id;
-        // 3️⃣ Credit user balance
-        // await db.execute(
-        //   "UPDATE users SET balance = balance + ? WHERE id = ?",
-        //   [amount, userId]
-        // );
-        // 4️⃣ Mark tx hash as processed
-        await db.execute("INSERT INTO processed_transactions (tx_hash, chain, address, amount) VALUES (?, ?, ?, ?)", [txHash, chain, address, amount]);
-        console.log(`Credited ${amount} to user ${userId} for tx ${txHash}`);
         res.sendStatus(200);
     }
     catch (err) {
         console.error("Error processing webhook:", err);
-        logError(err, "POST /webhooks/cdp");
         res.sendStatus(500);
     }
 });
