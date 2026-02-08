@@ -2,16 +2,104 @@ import {
     ALCHEMY_NOTIFY_BASE_URL,
     getNotifyHeaders
   } from "./notifyClient.js";
+  import "dotenv/config";
   
-  const webhookId = process.env.ALCHEMY_WEBHOOK_ID;
+  const webhookId = process.env.ALCHEMY_WEBHOOK_EVM_ID;
+  const webhookSolanaId = process.env.ALCHEMY_WEBHOOK_SOLANA_ID;
   
   if (!webhookId) {
     throw new Error("Missing ALCHEMY_WEBHOOK_ID");
   }
+
+  type CreateWebhookResponse = {
+    data: {
+      id: string;
+      network: string;
+      webhook_type: string;
+    };
+  };
+  
+  type AlchemySuccessResponse = {
+    success: boolean;
+  };
+  
   
   export interface AddressRegistryResponse {
     success: boolean;
     data?: unknown;
+  }
+  
+  export async function createWebhook(): Promise<string> {
+    const res = await fetch(
+      'https://dashboard.alchemy.com/api/create-webhook',
+      {
+        method: 'POST',
+        headers: getNotifyHeaders(),
+        body: JSON.stringify({
+          network: 'ETH_MAINNET',
+          webhook_type: 'GRAPHQL',
+          webhook_url: 'https://wallet.finplab.com/webhook/cdp',
+          name: 'finplab Webhook',
+        }),
+      }
+    );
+  
+    if (!res.ok) {
+      throw new Error(`Create webhook failed: ${res.statusText}`);
+    }
+  
+    const json = (await res.json()) as CreateWebhookResponse;
+    return json.data.id; // wh_***
+  }
+
+  export async function createWebhookVariable(
+    webhookId: string,
+    name: string,
+    value: string
+  ): Promise<AlchemySuccessResponse> {
+    const res = await fetch(
+      'https://dashboard.alchemy.com/api/create-webhook-variable',
+      {
+        method: 'POST',
+        headers: getNotifyHeaders(),
+        body: JSON.stringify({
+          webhook_id: webhookId,
+          name,
+          value,
+        }),
+      }
+    );
+  
+    if (!res.ok) {
+      throw new Error(`Create variable failed: ${res.statusText}`);
+    }
+  
+    return (await res.json()) as AlchemySuccessResponse;
+  }
+
+  export async function updateWebhookVariable(
+    webhookId: string,
+    name: string,
+    value: string
+  ): Promise<AlchemySuccessResponse> {
+    const res = await fetch(
+      'https://dashboard.alchemy.com/api/update-webhook-variable',
+      {
+        method: 'POST',
+        headers: getNotifyHeaders(),
+        body: JSON.stringify({
+          webhook_id: webhookId,
+          name,
+          value,
+        }),
+      }
+    );
+  
+    if (!res.ok) {
+      throw new Error(`Update variable failed: ${res.statusText}`);
+    }
+  
+    return (await res.json()) as AlchemySuccessResponse;
   }
   
   /**

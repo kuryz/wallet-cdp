@@ -1,7 +1,56 @@
 import { ALCHEMY_NOTIFY_BASE_URL, getNotifyHeaders } from "./notifyClient.js";
-const webhookId = process.env.ALCHEMY_WEBHOOK_ID;
+import "dotenv/config";
+const webhookId = process.env.ALCHEMY_WEBHOOK_EVM_ID;
+const webhookSolanaId = process.env.ALCHEMY_WEBHOOK_SOLANA_ID;
 if (!webhookId) {
     throw new Error("Missing ALCHEMY_WEBHOOK_ID");
+}
+export async function createWebhook() {
+    const res = await fetch('https://dashboard.alchemy.com/api/create-webhook', {
+        method: 'POST',
+        headers: getNotifyHeaders(),
+        body: JSON.stringify({
+            network: 'ETH_MAINNET',
+            webhook_type: 'ADDRESS_ACTIVITY',
+            webhook_url: 'https://wallet.finplab.com/webhook/cdp',
+            name: 'finplab Webhook',
+        }),
+    });
+    if (!res.ok) {
+        throw new Error(`Create webhook failed: ${res.statusText}`);
+    }
+    const json = (await res.json());
+    return json.data.id; // wh_***
+}
+export async function createWebhookVariable(webhookId, name, value) {
+    const res = await fetch('https://dashboard.alchemy.com/api/create-webhook-variable', {
+        method: 'POST',
+        headers: getNotifyHeaders(),
+        body: JSON.stringify({
+            webhook_id: webhookId,
+            name,
+            value,
+        }),
+    });
+    if (!res.ok) {
+        throw new Error(`Create variable failed: ${res.statusText}`);
+    }
+    return (await res.json());
+}
+export async function updateWebhookVariable(webhookId, name, value) {
+    const res = await fetch('https://dashboard.alchemy.com/api/update-webhook-variable', {
+        method: 'POST',
+        headers: getNotifyHeaders(),
+        body: JSON.stringify({
+            webhook_id: webhookId,
+            name,
+            value,
+        }),
+    });
+    if (!res.ok) {
+        throw new Error(`Update variable failed: ${res.statusText}`);
+    }
+    return (await res.json());
 }
 /**
  * Register wallet addresses to the webhook

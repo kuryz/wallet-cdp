@@ -1,7 +1,14 @@
+import "dotenv/config";
+type AlchemySuccessResponse = {
+    success: boolean;
+};
 export interface AddressRegistryResponse {
     success: boolean;
     data?: unknown;
 }
+export declare function createWebhook(): Promise<string>;
+export declare function createWebhookVariable(webhookId: string, name: string, value: string): Promise<AlchemySuccessResponse>;
+export declare function updateWebhookVariable(webhookId: string, name: string, value: string): Promise<AlchemySuccessResponse>;
 /**
  * Register wallet addresses to the webhook
  */
@@ -17,4 +24,5 @@ export declare function listRegisteredAddresses(): Promise<ListAddressesResponse
 export interface ListAddressesResponse {
     addresses: string[];
 }
+export {};
 //# sourceMappingURL=addressRegistry.d.ts.map

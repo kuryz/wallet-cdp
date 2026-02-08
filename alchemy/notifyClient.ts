@@ -1,8 +1,10 @@
+import "dotenv/config";
+
 export const ALCHEMY_NOTIFY_BASE_URL =
   "https://dashboard.alchemy.com/api/v1/notify";
 
 export function getNotifyHeaders(): Record<string, string> {
-  const apiKey = process.env.ALCHEMY_API_KEY;
+  const apiKey = process.env.ALCHEMY_TOKEN;
 
   if (!apiKey) {
     throw new Error("Missing ALCHEMY_API_KEY");

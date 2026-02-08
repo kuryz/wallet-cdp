@@ -8,7 +8,7 @@ import { db } from "./db.js";
 import { logError } from "./logger.js";
 // import { RowDataPacket } from "mysql2";
 import webhookRouter from "./webhooks/cdp.js";
-import { registerAddresses, unregisterAddresses, listRegisteredAddresses } from './alchemy/addressRegistry.js';
+import { registerAddresses, createWebhook } from './alchemy/addressRegistry.js';
 
 // dotenv.config();
 
@@ -158,6 +158,12 @@ app.post(
     }
   }
 );
+
+app.post("/add-wallet/evm", apiKeyAuth, async (_req, res) => {
+  const { wallet_address } = _req.body;
+  const webhookId = await createWebhook();
+  console.log('Webhook created:', webhookId);
+});
 
 // app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
 //     try {

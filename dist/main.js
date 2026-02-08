@@ -7,7 +7,7 @@ import { db } from "./db.js";
 import { logError } from "./logger.js";
 // import { RowDataPacket } from "mysql2";
 import webhookRouter from "./webhooks/cdp.js";
-import { registerAddresses } from './alchemy/addressRegistry.js';
+import { registerAddresses, createWebhook } from './alchemy/addressRegistry.js';
 // dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -114,6 +114,11 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
         logError(err, "POST /accounts/evm");
         res.status(500).json({ error: "Failed to create EVM account" });
     }
+});
+app.post("/add-wallet/evm", apiKeyAuth, async (_req, res) => {
+    const { wallet_address } = _req.body;
+    const webhookId = await createWebhook();
+    console.log('Webhook created:', webhookId);
 });
 // app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
 //     try {
