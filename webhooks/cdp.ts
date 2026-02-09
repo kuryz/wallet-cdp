@@ -132,6 +132,11 @@ router.use("/webhooks/cdp", express.json());
 router.post("/cdp", async (req: Request, res: Response) => {
   const webhookEvent: CdpWebhookResponse = req.body;
 
+  if (!webhookEvent || !webhookEvent.type) {
+    console.warn("Received invalid webhook:", webhookEvent);
+    return res.sendStatus(400);
+  }
+
   try {
     // Only process "ADDRESS_ACTIVITY" events
     if (webhookEvent.type !== "ADDRESS_ACTIVITY") {
