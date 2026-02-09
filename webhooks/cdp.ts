@@ -142,7 +142,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
     if (webhookEvent.type !== "ADDRESS_ACTIVITY") {
       return res.sendStatus(200);
     }
-    console.log("Received webhook of type:", webhookEvent.type);
+    console.log("Received webhook of type:", webhookEvent);
 
     const { activity, network } = webhookEvent.event;
     

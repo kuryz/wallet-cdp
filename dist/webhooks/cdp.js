@@ -61,6 +61,10 @@ router.use("/webhooks/cdp", express.json());
 }); */
 router.post("/cdp", async (req, res) => {
     const webhookEvent = req.body;
+    if (!webhookEvent || !webhookEvent.type) {
+        console.warn("Received invalid webhook:", webhookEvent);
+        return res.sendStatus(400);
+    }
     try {
         // Only process "ADDRESS_ACTIVITY" events
         if (webhookEvent.type !== "ADDRESS_ACTIVITY") {
@@ -82,7 +86,7 @@ router.post("/cdp", async (req, res) => {
             // 3️⃣ Credit user balance (optional)
             // await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", [amount, userId]);
             // 4️⃣ Mark tx as processed
-            await db.execute("INSERT INTO processed_transactions (tx_hash, chain, address, amount) VALUES (?, ?, ?, ?)", [txHash, network, address, amount]);
+            await db.execute("INSERT INTO processed_transactions (tx_hash, chain, address, amount, meta_data) VALUES (?, ?, ?, ?, ?)", [txHash, network, address, amount, JSON.stringify(webhookEvent)]);
             console.log(`Processed deposit of ${amount} on ${network} to user ${userId} (tx: ${txHash})`);
         }
         res.sendStatus(200);
