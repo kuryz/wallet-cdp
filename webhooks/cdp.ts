@@ -165,8 +165,8 @@ router.post("/cdp", async (req: Request, res: Response) => {
 
       // 4️⃣ Mark tx as processed
       await db.execute(
-        "INSERT INTO processed_transactions (tx_hash, chain, address, amount) VALUES (?, ?, ?, ?)",
-        [txHash, network, address, amount]
+        "INSERT INTO processed_transactions (tx_hash, chain, address, amount, meta_data) VALUES (?, ?, ?, ?, ?)",
+        [txHash, network, address, amount, JSON.stringify(webhookEvent)]
       );
 
       console.log(`Processed deposit of ${amount} on ${network} to user ${userId} (tx: ${txHash})`);
