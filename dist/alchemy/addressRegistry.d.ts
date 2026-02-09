@@ -2,6 +2,11 @@ import "dotenv/config";
 type AlchemySuccessResponse = {
     success: boolean;
 };
+export interface UpdateWebhookAddressesPayload {
+    webhook_id: string;
+    addresses_to_add: string[];
+    addresses_to_remove: string[];
+}
 export interface AddressRegistryResponse {
     success: boolean;
     data?: unknown;
@@ -12,7 +17,8 @@ export declare function updateWebhookVariable(webhookId: string, name: string, v
 /**
  * Register wallet addresses to the webhook
  */
-export declare function registerAddresses(addresses: string[]): Promise<AddressRegistryResponse>;
+export declare function registerAddresses(addresses: string[], webhookID: string): Promise<AddressRegistryResponse>;
+export declare function updateWebhookAddresses(payload: UpdateWebhookAddressesPayload): Promise<void>;
 /**
  * Remove wallet addresses from the webhook
  */

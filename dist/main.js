@@ -7,7 +7,8 @@ import { db } from "./db.js";
 import { logError } from "./logger.js";
 // import { RowDataPacket } from "mysql2";
 import webhookRouter from "./webhooks/cdp.js";
-import { registerAddresses, createWebhook } from './alchemy/addressRegistry.js';
+import { updateWebhookAddresses } from './alchemy/addressRegistry.js';
+import { createAlchemyWebhook, getWebhookId, insertWebhookId } from './alchemy/webhook.js';
 // dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -99,9 +100,9 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
             owner
         });
         await storeAddress(owner.address, account.address, "evm");
-        await registerAddresses([
-            account.address
-        ]);
+        // await registerAddresses([
+        //   account.address
+        // ]);
         res.json({
             address: account.address,
             "Owner EOA": owner.address,
@@ -116,9 +117,27 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
     }
 });
 app.post("/add-wallet/evm", apiKeyAuth, async (_req, res) => {
-    const { wallet_address } = _req.body;
-    const webhookId = await createWebhook();
-    console.log('Webhook created:', webhookId);
+    let { wallet_address, network } = _req.body;
+    // const webhookId = await createWebhook();
+    switch (network) {
+        case 'ethereum':
+            network = "ETH_MAINNET";
+            break;
+        default:
+            break;
+    }
+    const webhook_id = await getWebhookId(network);
+    // const data = await registerAddresses(wallet_address, webhook_id);
+    const data = await updateWebhookAddresses({
+        addresses_to_add: [wallet_address],
+        webhook_id: webhook_id,
+        addresses_to_remove: [],
+    });
+    console.log('Webhook address data:', data);
+    res.json({
+        "id": webhook_id,
+        "addr": data
+    });
 });
 // app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
 //     try {
@@ -136,9 +155,9 @@ app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
     try {
         const account = await cdp.solana.createAccount();
         await storeAddress(account.address, '', "solana");
-        await registerAddresses([
-            account.address
-        ]);
+        // await registerAddresses([
+        //   account.address
+        // ]);
         res.json({
             address: account.address,
         });
@@ -174,12 +193,22 @@ app.use("/webhooks", webhookRouter);
 // Route to register CDP webhook
 app.post("/register-webhook", apiKeyAuth, async (req, res) => {
     try {
-        const response = await registerCdpWebhook();
-        res.json({ status: "ok", message: "CDP webhook registration triggered", webhooksec: response?.metadata?.secret });
+        // const response = await registerCdpWebhook();
+        // res.json({ status: "ok", message: "CDP webhook registration triggered",  webhooksec: response?.metadata?.secret});
+        const webhookData = await createAlchemyWebhook({
+            network: "BNB_MAINNET",
+            name: "Finp",
+            addresses: ["0x5B7D9715b19003eA821d75c35f338C1fC716f888"],
+            webhook_type: "ADDRESS_ACTIVITY",
+            webhook_url: "https://wallet.finplab.com/webhooks/cdp"
+        });
+        const data = webhookData.data;
+        await insertWebhookId(data);
+        console.log('Webhook created:', webhookData);
     }
     catch (err) {
         console.error("Error registering CDP webhook:", err);
-        res.status(500).json({ error: "Failed to register webhook" });
+        res.status(500).json({ error: `Failed to register webhook.` });
     }
 });
 /**

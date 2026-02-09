@@ -5,7 +5,7 @@ import {
   import "dotenv/config";
   
   const webhookId = process.env.ALCHEMY_WEBHOOK_EVM_ID;
-  const webhookSolanaId = process.env.ALCHEMY_WEBHOOK_SOLANA_ID;
+  
   
   if (!webhookId) {
     throw new Error("Missing ALCHEMY_WEBHOOK_ID");
@@ -22,6 +22,12 @@ import {
   type AlchemySuccessResponse = {
     success: boolean;
   };
+
+  export interface UpdateWebhookAddressesPayload {
+    webhook_id: string;
+    addresses_to_add: string[];
+    addresses_to_remove: string[];
+  }
   
   
   export interface AddressRegistryResponse {
@@ -106,10 +112,11 @@ import {
    * Register wallet addresses to the webhook
    */
   export async function registerAddresses(
-    addresses: string[]
+    addresses: string[],
+    webhookID: string
   ): Promise<AddressRegistryResponse> {
     const response = await fetch(
-      `${ALCHEMY_NOTIFY_BASE_URL}/${webhookId}/addresses`,
+      `${ALCHEMY_NOTIFY_BASE_URL}/${webhookID}/addresses`,
       {
         method: "POST",
         headers: getNotifyHeaders(),
@@ -125,6 +132,29 @@ import {
     
     const data = (await response.json()) as AddressRegistryResponse;
     return data;
+  }
+
+  export async function updateWebhookAddresses(
+    payload: UpdateWebhookAddressesPayload
+  ): Promise<void> {
+    const url = "https://dashboard.alchemy.com/api/update-webhook-addresses";
+  
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "X-Alchemy-Token": process.env.ALCHEMY_TOKEN!, // must be set in .env
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to update webhook addresses: ${text}`);
+    }
+  
+    const data = await response.json();
+    console.log("Webhook updated successfully:", data);
   }
   
   /**
