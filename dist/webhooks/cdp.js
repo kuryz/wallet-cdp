@@ -70,16 +70,17 @@ router.post("/cdp", async (req, res) => {
         if (webhookEvent.type !== "ADDRESS_ACTIVITY") {
             return res.sendStatus(200);
         }
-        console.log("Received webhook of type:", webhookEvent.type);
+        console.log("Received webhook of type:", webhookEvent);
         const { activity, network } = webhookEvent.event;
         for (const tx of activity) {
             const { toAddress: address, hash: txHash, value: amount } = tx;
+            console.log("address:", address);
             // 1️⃣ Idempotency check
             const [processedRows] = await db.execute("SELECT tx_hash FROM processed_transactions WHERE tx_hash = ?", [txHash]);
             if (processedRows.length > 0)
                 continue;
             // 2️⃣ Lookup user
-            const [userRows] = await db.execute("SELECT id FROM deposit_addresses WHERE address = ?", [address]);
+            const [userRows] = await db.execute("SELECT id FROM deposit_addresses WHERE address = ? OR smart_address = ?", [address, address]);
             if (userRows.length === 0)
                 continue;
             const userId = userRows[0]?.id;

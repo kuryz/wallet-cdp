@@ -148,7 +148,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
     
     for (const tx of activity) {
       const { toAddress: address, hash: txHash, value: amount } = tx;
-
+      console.log("address:", address);
       // 1️⃣ Idempotency check
       const [processedRows] = await db.execute<ProcessedTxRow[]>(
         "SELECT tx_hash FROM processed_transactions WHERE tx_hash = ?",
@@ -158,8 +158,8 @@ router.post("/cdp", async (req: Request, res: Response) => {
 
       // 2️⃣ Lookup user
       const [userRows] = await db.execute<DepositAddressRow[]>(
-        "SELECT id FROM deposit_addresses WHERE address = ?",
-        [address]
+        "SELECT id FROM deposit_addresses WHERE address = ? OR smart_address = ?",
+        [address, address]
       );
       if (userRows.length === 0) continue;
 
