@@ -39,14 +39,14 @@ function apiKeyAuth(req, res, next) {
     }
     next();
 }
-async function storeAddress(address, smart, chain) {
+async function storeAddress(userId, address, smart, chain) {
     if (smart == '') {
-        await db.execute(`INSERT IGNORE INTO deposit_addresses (address, chain)
-       VALUES (?, ?)`, [address, chain]);
+        await db.execute(`INSERT IGNORE INTO deposit_addresses (user_id, address, chain)
+       VALUES (?, ?, ?)`, [userId, address, chain]);
     }
     else {
-        await db.execute(`INSERT IGNORE INTO deposit_addresses (address, smart_address, chain)
-       VALUES (?, ?, ?)`, [address, smart, chain]);
+        await db.execute(`INSERT IGNORE INTO deposit_addresses (user_id, address, smart_address, chain)
+       VALUES (?, ?, ?, ?)`, [userId, address, smart, chain]);
     }
 }
 function generateCdpApiToken() {
@@ -92,14 +92,15 @@ app.get("/health", (_req, res) => {
 // Create EVM account
 app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
     try {
-        const owner = await cdp.evm.getOrCreateAccount({
-            name: "Finp_user"
-        });
-        // const owner = await cdp.evm.createAccount();
+        const { user } = _req.body;
+        // const firstOwner = await cdp.evm.getOrCreateAccount({
+        //   name: "Finp_user"
+        // });
+        const owner = await cdp.evm.createAccount();
         const account = await cdp.evm.createSmartAccount({
             owner
         });
-        await storeAddress(owner.address, account.address, "evm");
+        await storeAddress(user, owner.address, account.address, "evm");
         // await registerAddresses([
         //   account.address
         // ]);
@@ -153,8 +154,9 @@ app.post("/add-wallet/evm", apiKeyAuth, async (_req, res) => {
 // });
 app.post("/accounts/solana", apiKeyAuth, async (_req, res) => {
     try {
+        const { user } = _req.body;
         const account = await cdp.solana.createAccount();
-        await storeAddress(account.address, '', "solana");
+        await storeAddress(user, account.address, '', "solana");
         // await registerAddresses([
         //   account.address
         // ]);

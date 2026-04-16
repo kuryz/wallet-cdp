@@ -62,19 +62,19 @@ function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
-async function storeAddress(address: string, smart: string, chain: "evm" | "solana") {
+async function storeAddress(userId: string, address: string, smart: string, chain: "evm" | "solana") {
 
   if (smart == '') {
     await db.execute(
-      `INSERT IGNORE INTO deposit_addresses (address, chain)
-       VALUES (?, ?)`,
-      [address, chain]
+      `INSERT IGNORE INTO deposit_addresses (user_id, address, chain)
+       VALUES (?, ?, ?)`,
+      [userId, address, chain]
     );
   }else{
     await db.execute(
-      `INSERT IGNORE INTO deposit_addresses (address, smart_address, chain)
-       VALUES (?, ?, ?)`,
-      [address, smart, chain]
+      `INSERT IGNORE INTO deposit_addresses (user_id, address, smart_address, chain)
+       VALUES (?, ?, ?, ?)`,
+      [userId, address, smart, chain]
     );
   }
     
@@ -137,14 +137,15 @@ app.post(
   apiKeyAuth,
   async (_req: Request, res: Response): Promise<void> => {
     try {
-      const owner = await cdp.evm.getOrCreateAccount({
-        name: "Finp_user"
-      });
-      // const owner = await cdp.evm.createAccount();
+      const { user } = _req.body;
+      // const firstOwner = await cdp.evm.getOrCreateAccount({
+      //   name: "Finp_user"
+      // });
+      const owner = await cdp.evm.createAccount();
       const account = await cdp.evm.createSmartAccount({
         owner
       });
-      await storeAddress(owner.address, account.address, "evm");
+      await storeAddress(user, owner.address, account.address, "evm");
       // await registerAddresses([
       //   account.address
       // ]);
@@ -206,8 +207,9 @@ app.post(
   apiKeyAuth,
   async (_req: Request, res: Response): Promise<void> => {
     try {
+      const { user } = _req.body;
       const account = await cdp.solana.createAccount();
-      await storeAddress(account.address, '', "solana");
+      await storeAddress(user, account.address, '', "solana");
 
       // await registerAddresses([
       //   account.address
