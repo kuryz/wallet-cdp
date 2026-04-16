@@ -92,10 +92,10 @@ app.get("/health", (_req, res) => {
 // Create EVM account
 app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
     try {
-        // const firstOwner = await cdp.evm.getOrCreateAccount({
-        //   name: "Finp_user"
-        // });
-        const owner = await cdp.evm.createAccount();
+        const owner = await cdp.evm.getOrCreateAccount({
+            name: "Finp_user"
+        });
+        // const owner = await cdp.evm.createAccount();
         const account = await cdp.evm.createSmartAccount({
             owner
         });
