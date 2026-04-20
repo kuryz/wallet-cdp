@@ -11,7 +11,7 @@ import webhookRouter from "./webhooks/cdp.js";
 import { registerAddresses, createWebhook, updateWebhookAddresses } from './alchemy/addressRegistry.js';
 import { createAlchemyWebhook, getWebhookId, insertWebhookId } from './alchemy/webhook.js'
 import { encodeTransfer, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
-import { ethers } from "ethers";
+import { ethers, parseEther } from "ethers";
 // dotenv.config();
 
 const app = express();
@@ -250,7 +250,9 @@ app.post("/get-token-balance", apiKeyAuth, async (req: Request, res: Response) =
     res.status(500).json({ error: err.message });
   }
 });
-
+const erc20Abi = [
+  "function transfer(address to, uint256 amount)"
+];
 /**
  * withdrawal logic
  */
@@ -261,20 +263,42 @@ app.post("/cdp-withdraw-process", apiKeyAuth, async (req: Request, res: Response
 
     const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
     const amountToSend = 0.05;
-    const owner = await cdp.evm.getAccount({
-      address: "0x8327E432E8dA3152d799eB9F06CDA74800974F31"
-    });
-    const smartAccount = await cdp.evm.getSmartAccount({
-      owner,
-      address: usdc_account
-    });
+    const accountsResult = await cdp.evm.listAccounts();
+    const owner = accountsResult.accounts[0];
+    if (!owner) throw new Error('No owner account found')
+
+      const smartAccountsResult = await cdp.evm.listSmartAccounts();
+      const smartAccount = smartAccountsResult.accounts[3]; // index 3 as you wanted
+      if (!smartAccount) throw new Error('Smart account not found');
+
+      const smartAccountSDK = await cdp.evm.getSmartAccount({
+        address: smartAccount.address, // already `0x${string}`
+        owner: owner,                  // owner account object
+      });
+
     const txResult = await cdp.evm.sendUserOperation({
       network: "base",
-      smartAccount: smartAccount,
-      calls: [{
-        to: USDC_BASE,
-        data: encodeTransfer(destinationAddress, amountToSend),
-      }],
+      smartAccount: smartAccountSDK,
+      paymasterUrl: "https://api.developer.coinbase.com/rpc/v1/base/LCT7r5ZaPObDm4t7oDDhe8fSJQgAJNEe",
+      calls: [
+       // ETH transfer (optional)
+      {
+        to: destinationAddress,
+        value: parseEther("0.0000005"),
+        data: "0x",
+      },
+
+      // USDC transfer
+      {
+        to: USDC_BASE, // ✅ MUST be token contract
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [
+          destinationAddress,
+          BigInt(0.05 * 1e6), // 6 decimals
+        ],
+      },
+      ],
     });
 
     console.log(`\n✅ Transfer submitted!`);
