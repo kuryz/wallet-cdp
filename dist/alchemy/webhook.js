@@ -19,7 +19,8 @@ export async function createAlchemyWebhook(payload) {
     return data;
 }
 export async function updateAlchemyWebhookAddresses(payload) {
-    const response = await fetch(`${ALCHEMY_API_URL}/updateWebhookAddresses`, {
+    const url = "https://dashboard.alchemy.com/api/update-webhook-addresses";
+    const response = await fetch(url, {
         method: "PATCH", // important: NOT POST
         headers: {
             "Content-Type": "application/json",
