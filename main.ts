@@ -150,11 +150,14 @@ app.post(
       
       /**
        * register by the specified networks 
-       * ETH_MAINNET, BSC,
+       * ETH_MAINNET, BSC, polygon, base
        */
 
       await Promise.all([
         registerAddressWebhook(owner.address, 'ETH_MAINNET'),
+        registerAddressWebhook(owner.address, 'BNB_MAINNET'),
+        registerAddressWebhook(owner.address, 'POLYGON_MAINNET'),
+        registerAddressWebhook(owner.address, 'BASE_MAINNET'),
       ])
       
       res.json({

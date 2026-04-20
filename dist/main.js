@@ -104,10 +104,13 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
         await storeAddress(user, owner.address, account.address, "evm");
         /**
          * register by the specified networks
-         * ETH_MAINNET, BSC,
+         * ETH_MAINNET, BSC, polygon, base
          */
         await Promise.all([
             registerAddressWebhook(owner.address, 'ETH_MAINNET'),
+            registerAddressWebhook(owner.address, 'BNB_MAINNET'),
+            registerAddressWebhook(owner.address, 'POLYGON_MAINNET'),
+            registerAddressWebhook(owner.address, 'BASE_MAINNET'),
         ]);
         res.json({
             address: account.address,
