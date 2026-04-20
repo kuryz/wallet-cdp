@@ -129,7 +129,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
 
       // Mark tx as processed
       await db.execute(
-        "INSERT INTO processed_transactions (tx_hash, chain, address, amount, sd_data, meta_data) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO processed_transactions (tx_hash, chain, address, amount, sd_data, meta_data) VALUES (?, ?, ?, ?, ?, ?)",
         [txHash, network, address, amount, JSON.stringify(result), JSON.stringify(webhookEvent)]
       );
 
