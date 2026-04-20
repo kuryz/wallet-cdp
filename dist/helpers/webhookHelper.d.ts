@@ -10,6 +10,6 @@ export declare function registerWebhook(params: CreateWebhookParams): Promise<{
     data: any;
 }>;
 export declare function registerAddressWebhook(address: string, network: string): Promise<any>;
-export declare function encodeTransfer(to: `0x${string}`, amount: number): `0x${string}`;
+export declare function encodeTransfer(to: `0x${string}`, amount: string): `0x${string}`;
 export {};
 //# sourceMappingURL=webhookHelper.d.ts.map

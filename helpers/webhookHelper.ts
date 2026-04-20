@@ -56,7 +56,7 @@ export async function registerAddressWebhook(address: string, network: string) {
 
 export function encodeTransfer(
   to: `0x${string}`,
-  amount: number
+  amount: string
 ): `0x${string}` {
   const iface = new ethers.Interface([
     "function transfer(address to, uint256 amount)"

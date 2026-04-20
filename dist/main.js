@@ -193,7 +193,7 @@ app.post("/cdp-withdraw-process", apiKeyAuth, async (req, res) => {
         const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
         const usdc_account = "0x9C7f69a7963257a34193e689a935649F4e25D2aa";
         const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
-        const amountToSend = 0.05;
+        const amountToSend = '0.05';
         const accountsResult = await cdp.evm.listAccounts();
         const owner = accountsResult.accounts[8];
         if (!owner)
