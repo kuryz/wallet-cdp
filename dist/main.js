@@ -199,7 +199,7 @@ app.post("/cdp-withdraw-process", apiKeyAuth, async (req, res) => {
         const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
         const amountToSend = 0.05;
         const accountsResult = await cdp.evm.listAccounts();
-        const owner = accountsResult.accounts[0];
+        const owner = accountsResult.accounts[8];
         if (!owner)
             throw new Error('No owner account found');
         const smartAccountsResult = await cdp.evm.listSmartAccounts();
