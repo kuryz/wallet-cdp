@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { db } from "../db.js";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { UpdateWebhookAddressesPayload } from "./addressRegistry.js";
 
 interface WebhookData {
     id: string;
@@ -61,7 +62,7 @@ export async function createAlchemyWebhook(
 }
 
 export async function updateAlchemyWebhookAddresses(
-  payload: UpdateWebhookAddressPayload
+  payload: UpdateWebhookAddressesPayload
 ) {
   const url = "https://dashboard.alchemy.com/api/update-webhook-addresses";
   const response = await fetch(url, {

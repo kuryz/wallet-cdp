@@ -31,7 +31,8 @@ export async function registerAddressWebhook(address, network) {
     // Append address to existing webhook
     const webhookData = await updateAlchemyWebhookAddresses({
         webhook_id: existingWebhook,
-        addAddresses: [address],
+        addresses_to_add: [address],
+        addresses_to_remove: []
     });
     await insertWebhookId(webhookData.data);
     return webhookData.data;
