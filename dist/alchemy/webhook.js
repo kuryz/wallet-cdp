@@ -26,11 +26,7 @@ export async function updateAlchemyWebhookAddresses(payload) {
             "Content-Type": "application/json",
             "X-Alchemy-Token": ALCHEMY_TOKEN,
         },
-        body: JSON.stringify({
-            webhook_id: payload.webhook_id,
-            addAddresses: payload.addAddresses || [],
-            removeAddresses: payload.removeAddresses || [],
-        }),
+        body: JSON.stringify(payload),
     });
     if (!response.ok) {
         const text = await response.text();
