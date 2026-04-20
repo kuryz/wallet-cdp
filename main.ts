@@ -261,21 +261,32 @@ app.post("/cdp-withdraw-process", apiKeyAuth, async (req: Request, res: Response
 
     const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
     const amountToSend = 0.05;
-    const txResult = await cdp.evm.sendTransaction({
+    const owner = await cdp.evm.getAccount({
+      address: "0x8327E432E8dA3152d799eB9F06CDA74800974F31"
+    });
+    const smartAccount = await cdp.evm.getSmartAccount({
+      owner,
+      address: usdc_account
+    });
+    const txResult = await cdp.evm.sendUserOperation({
       network: "base",
-      address: usdc_account,
-      transaction: {
+      smartAccount: smartAccount,
+      calls: [{
         to: USDC_BASE,
         data: encodeTransfer(destinationAddress, amountToSend),
-      },
+      }],
     });
 
     console.log(`\n✅ Transfer submitted!`);
-    console.log(`   Transaction Hash: ${txResult.transactionHash}`);
+    console.log(`   Transaction Hash: ${txResult}`);
   } catch (err) {
     console.error("Error occured:", err);
     res.status(500).json({ error: `Failed to process.` });
   }
+});
+
+app.post("cdp/get-address", apiKeyAuth, async (req: Request, res: Response) =>{
+  
 });
 
 // Webhook endpoint
