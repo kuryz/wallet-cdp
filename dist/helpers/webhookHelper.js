@@ -34,7 +34,7 @@ export async function registerAddressWebhook(address, network) {
         addresses_to_add: [address],
         addresses_to_remove: []
     });
-    await insertWebhookId(webhookData.data);
+    // await insertWebhookId(webhookData.data);
     return webhookData.data;
 }
 //# sourceMappingURL=webhookHelper.js.map
