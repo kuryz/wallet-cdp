@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { createAlchemyWebhook, getWebhookId, insertWebhookId, updateAlchemyWebhookAddresses } from "../alchemy/webhook.js";
 export async function registerWebhook(params) {
     try {
@@ -36,5 +37,15 @@ export async function registerAddressWebhook(address, network) {
     });
     // await insertWebhookId(webhookData.data);
     return webhookData.data;
+}
+export function encodeTransfer(to, amount) {
+    const iface = new ethers.Interface([
+        "function transfer(address to, uint256 amount)"
+    ]);
+    const data = iface.encodeFunctionData("transfer", [
+        to,
+        ethers.parseUnits(amount.toString(), 6),
+    ]);
+    return data;
 }
 //# sourceMappingURL=webhookHelper.js.map

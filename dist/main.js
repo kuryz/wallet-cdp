@@ -9,7 +9,7 @@ import { logError } from "./logger.js";
 import webhookRouter from "./webhooks/cdp.js";
 import { updateWebhookAddresses } from './alchemy/addressRegistry.js';
 import { getWebhookId } from './alchemy/webhook.js';
-import { registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
+import { encodeTransfer, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
 // dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -185,6 +185,31 @@ app.post("/get-token-balance", apiKeyAuth, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+/**
+ * withdrawal logic
+ */
+app.post("/cdp-withdraw-process", apiKeyAuth, async (req, res) => {
+    try {
+        const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+        const usdc_account = "0x9C7f69a7963257a34193e689a935649F4e25D2aa";
+        const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
+        const amountToSend = 0.05;
+        const txResult = await cdp.evm.sendTransaction({
+            network: "base",
+            address: usdc_account,
+            transaction: {
+                to: USDC_BASE,
+                data: encodeTransfer(destinationAddress, amountToSend),
+            },
+        });
+        console.log(`\n✅ Transfer submitted!`);
+        console.log(`   Transaction Hash: ${txResult.transactionHash}`);
+    }
+    catch (err) {
+        console.error("Error occured:", err);
+        res.status(500).json({ error: `Failed to process.` });
+    }
+});
 // Webhook endpoint
 // Mount your webhook route
 app.use("/webhooks", webhookRouter);
@@ -214,46 +239,49 @@ app.post("/register-webhook", apiKeyAuth, async (req, res) => {
 /**
  * Register webhook with CDP programmatically
  */
-async function registerCdpWebhook() {
-    const url = "https://api.cdp.coinbase.com/platform/v2/data/webhooks/subscriptions";
-    const body = {
-        description: "Deposit notifications",
-        eventTypes: ["onchain.activity.detected"],
-        target: { url: "https://wallet.finplab.com/webhooks/cdp", method: "POST" },
-        labels: {},
-        isEnabled: true,
-    };
-    // Sign request
-    const timestamp = Math.floor(Date.now() / 1000);
-    const payload = `${timestamp}POST/platform/v2/data/webhooks/subscriptions${JSON.stringify(body)}`;
-    const signature = crypto
-        .createHmac("sha256", requiredEnv("CDP_API_KEY_SECRET"))
-        .update(payload)
-        .digest("hex");
-    try {
-        const res = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "CB-ACCESS-KEY": requiredEnv("CDP_API_KEY_ID"),
-                "CB-ACCESS-SIGN": signature,
-                "CB-ACCESS-TIMESTAMP": String(timestamp),
-            },
-            body: JSON.stringify(body),
-        });
-        const data = (await res.json());
-        console.log("CDP webhook registration response:", data);
-        // Save webhook secret to .env or DB
-        if (data?.metadata?.secret) {
-            console.log("Save this CDP_WEBHOOK_SECRET:", data.metadata.secret);
-        }
-        return data;
+/* async function registerCdpWebhook() {
+  const url = "https://api.cdp.coinbase.com/platform/v2/data/webhooks/subscriptions";
+  const body = {
+    description: "Deposit notifications",
+    eventTypes: ["onchain.activity.detected"],
+    target: { url: "https://wallet.finplab.com/webhooks/cdp", method: "POST" },
+    labels: {},
+    isEnabled: true,
+  };
+
+  // Sign request
+  const timestamp = Math.floor(Date.now() / 1000);
+  const payload = `${timestamp}POST/platform/v2/data/webhooks/subscriptions${JSON.stringify(body)}`;
+  const signature = crypto
+    .createHmac("sha256", requiredEnv("CDP_API_KEY_SECRET"))
+    .update(payload)
+    .digest("hex");
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "CB-ACCESS-KEY": requiredEnv("CDP_API_KEY_ID"),
+        "CB-ACCESS-SIGN": signature,
+        "CB-ACCESS-TIMESTAMP": String(timestamp),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = (await res.json()) as CdpWebhookResponse;
+    console.log("CDP webhook registration response:", data);
+
+    // Save webhook secret to .env or DB
+    if (data?.metadata?.secret) {
+      console.log("Save this CDP_WEBHOOK_SECRET:", data.metadata.secret);
     }
-    catch (err) {
-        console.error("Failed to register CDP webhook:", err);
-        logError(err, 'webhook');
-    }
-}
+    return data;
+  } catch (err) {
+    console.error("Failed to register CDP webhook:", err);
+    logError(err, 'webhook');
+  }
+} */
 app.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
 });

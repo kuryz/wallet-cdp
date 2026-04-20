@@ -10,7 +10,8 @@ import { logError } from "./logger.js";
 import webhookRouter from "./webhooks/cdp.js";
 import { registerAddresses, createWebhook, updateWebhookAddresses } from './alchemy/addressRegistry.js';
 import { createAlchemyWebhook, getWebhookId, insertWebhookId } from './alchemy/webhook.js'
-import { registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
+import { encodeTransfer, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
+import { ethers } from "ethers";
 // dotenv.config();
 
 const app = express();
@@ -250,6 +251,33 @@ app.post("/get-token-balance", apiKeyAuth, async (req: Request, res: Response) =
   }
 });
 
+/**
+ * withdrawal logic
+ */
+app.post("/cdp-withdraw-process", apiKeyAuth, async (req: Request, res: Response) => {
+  try {
+    const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+    const usdc_account ="0x9C7f69a7963257a34193e689a935649F4e25D2aa";
+
+    const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
+    const amountToSend = 0.05;
+    const txResult = await cdp.evm.sendTransaction({
+      network: "base",
+      address: usdc_account,
+      transaction: {
+        to: USDC_BASE,
+        data: encodeTransfer(destinationAddress, amountToSend),
+      },
+    });
+
+    console.log(`\n✅ Transfer submitted!`);
+    console.log(`   Transaction Hash: ${txResult.transactionHash}`);
+  } catch (err) {
+    console.error("Error occured:", err);
+    res.status(500).json({ error: `Failed to process.` });
+  }
+});
+
 // Webhook endpoint
 // Mount your webhook route
 app.use("/webhooks", webhookRouter);
@@ -281,7 +309,7 @@ app.post("/register-webhook", apiKeyAuth, async (req: Request, res: Response) =>
 /**
  * Register webhook with CDP programmatically
  */
-async function registerCdpWebhook() {
+/* async function registerCdpWebhook() {
   const url = "https://api.cdp.coinbase.com/platform/v2/data/webhooks/subscriptions";
   const body = {
     description: "Deposit notifications",
@@ -323,7 +351,7 @@ async function registerCdpWebhook() {
     console.error("Failed to register CDP webhook:", err);
     logError(err, 'webhook');
   }
-}
+} */
 
 app.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
