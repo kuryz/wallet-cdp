@@ -9,8 +9,7 @@ import { logError } from "./logger.js";
 import webhookRouter from "./webhooks/cdp.js";
 import { updateWebhookAddresses } from './alchemy/addressRegistry.js';
 import { getWebhookId } from './alchemy/webhook.js';
-import { registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
-import { parseEther } from "ethers";
+import { encodeTransfer, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
 // dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -186,9 +185,6 @@ app.post("/get-token-balance", apiKeyAuth, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-const erc20Abi = [
-    "function transfer(address to, uint256 amount)"
-];
 /**
  * withdrawal logic
  */
@@ -214,24 +210,10 @@ app.post("/cdp-withdraw-process", apiKeyAuth, async (req, res) => {
             network: "base",
             smartAccount: smartAccountSDK,
             paymasterUrl: "https://api.developer.coinbase.com/rpc/v1/base/LCT7r5ZaPObDm4t7oDDhe8fSJQgAJNEe",
-            calls: [
-                // ETH transfer (optional)
-                {
-                    to: destinationAddress,
-                    value: parseEther("0.0000005"),
-                    data: "0x",
-                },
-                // USDC transfer
-                {
-                    to: USDC_BASE, // ✅ MUST be token contract
-                    abi: erc20Abi,
-                    functionName: "transfer",
-                    args: [
-                        destinationAddress,
-                        BigInt(0.05 * 1e6), // 6 decimals
-                    ],
-                },
-            ],
+            calls: [{
+                    to: USDC_BASE,
+                    data: encodeTransfer(destinationAddress, amountToSend),
+                }],
         });
         console.log(`\n✅ Transfer submitted!`);
         console.log(`   Transaction Hash: ${txResult}`);
