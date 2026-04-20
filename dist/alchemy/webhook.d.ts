@@ -25,8 +25,14 @@ export interface AlchemyWebhookResponse {
     webhook_url: string;
     [key: string]: any;
 }
+type UpdateWebhookAddressPayload = {
+    webhook_id: string;
+    addAddresses?: string[];
+    removeAddresses?: string[];
+};
 export declare function createAlchemyWebhook(payload: AlchemyWebhookRequest): Promise<AlchemyWebhookResponse>;
+export declare function updateAlchemyWebhookAddresses(payload: UpdateWebhookAddressPayload): Promise<AlchemyWebhookResponse>;
 export declare function insertWebhookId(data: WebhookData): Promise<void>;
-export declare function getWebhookId(network: string): Promise<string>;
+export declare function getWebhookId(network: string, selectColumn: "webhook_id" | "network" | "name" | "webhook_url"): Promise<string>;
 export {};
 //# sourceMappingURL=webhook.d.ts.map

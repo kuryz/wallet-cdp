@@ -31,6 +31,12 @@ export interface AlchemyWebhookResponse {
   [key: string]: any; // extra fields
 }
 
+type UpdateWebhookAddressPayload = {
+  webhook_id: string;
+  addAddresses?: string[];
+  removeAddresses?: string[];
+};
+
 const ALCHEMY_API_URL = "https://dashboard.alchemy.com/api/create-webhook";
 const ALCHEMY_TOKEN = process.env.ALCHEMY_TOKEN!; // must be set in .env
 
@@ -50,6 +56,31 @@ export async function createAlchemyWebhook(
     const text = await response.text();
     throw new Error(`Alchemy API error: ${text}`);
   }
+  const data = (await response.json()) as AlchemyWebhookResponse;
+  return data;
+}
+
+export async function updateAlchemyWebhookAddresses(
+  payload: UpdateWebhookAddressPayload
+) {
+  const response = await fetch(`${ALCHEMY_API_URL}/updateWebhookAddresses`, {
+    method: "PATCH", // important: NOT POST
+    headers: {
+      "Content-Type": "application/json",
+      "X-Alchemy-Token": ALCHEMY_TOKEN,
+    },
+    body: JSON.stringify({
+      webhook_id: payload.webhook_id,
+      addAddresses: payload.addAddresses || [],
+      removeAddresses: payload.removeAddresses || [],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Alchemy update error: ${text}`);
+  }
+
   const data = (await response.json()) as AlchemyWebhookResponse;
   return data;
 }
@@ -95,9 +126,12 @@ export async function insertWebhookId(data: WebhookData) {
     );
 }
 
-export async function getWebhookId(network: string) {
+export async function getWebhookId(
+  network: string,
+  selectColumn: "webhook_id" | "network" | "name" | "webhook_url"
+) {
     const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT webhook_id
+        `SELECT ${selectColumn}
       FROM alchemy_webhooks
       WHERE network = ?
         AND webhook_type = 'ADDRESS_ACTIVITY'
@@ -111,6 +145,6 @@ export async function getWebhookId(network: string) {
         throw new Error(`No active webhook configured`);
       }
     
-      const webhookId = rows[0]?.webhook_id as string;
+      const webhookId = rows[0]?.[selectColumn] as string;
       return webhookId;
 }

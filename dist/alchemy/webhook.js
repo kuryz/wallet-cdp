@@ -18,6 +18,26 @@ export async function createAlchemyWebhook(payload) {
     const data = (await response.json());
     return data;
 }
+export async function updateAlchemyWebhookAddresses(payload) {
+    const response = await fetch(`${ALCHEMY_API_URL}/updateWebhookAddresses`, {
+        method: "PATCH", // important: NOT POST
+        headers: {
+            "Content-Type": "application/json",
+            "X-Alchemy-Token": ALCHEMY_TOKEN,
+        },
+        body: JSON.stringify({
+            webhook_id: payload.webhook_id,
+            addAddresses: payload.addAddresses || [],
+            removeAddresses: payload.removeAddresses || [],
+        }),
+    });
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Alchemy update error: ${text}`);
+    }
+    const data = (await response.json());
+    return data;
+}
 export async function insertWebhookId(data) {
     await db.execute(`
         INSERT INTO alchemy_webhooks (
@@ -55,8 +75,8 @@ export async function insertWebhookId(data) {
         data.time_created
     ]);
 }
-export async function getWebhookId(network) {
-    const [rows] = await db.execute(`SELECT webhook_id
+export async function getWebhookId(network, selectColumn) {
+    const [rows] = await db.execute(`SELECT ${selectColumn}
       FROM alchemy_webhooks
       WHERE network = ?
         AND webhook_type = 'ADDRESS_ACTIVITY'
@@ -66,7 +86,7 @@ export async function getWebhookId(network) {
     if (rows.length === 0) {
         throw new Error(`No active webhook configured`);
     }
-    const webhookId = rows[0]?.webhook_id;
+    const webhookId = rows[0]?.[selectColumn];
     return webhookId;
 }
 //# sourceMappingURL=webhook.js.map
