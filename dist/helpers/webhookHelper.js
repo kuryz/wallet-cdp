@@ -34,6 +34,6 @@ export async function registerAddressWebhook(address, network) {
         addAddresses: [address],
     });
     await insertWebhookId(webhookData.data);
-    return { updated: true };
+    return webhookData.data;
 }
 //# sourceMappingURL=webhookHelper.js.map

@@ -48,6 +48,6 @@ export async function registerAddressWebhook(address: string, network: string) {
     webhook_id: existingWebhook,
     addAddresses: [address],
   });
-await insertWebhookId(webhookData.data);
-  return { updated: true };
+  await insertWebhookId(webhookData.data);
+  return webhookData.data;
 }

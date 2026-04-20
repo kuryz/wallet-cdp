@@ -85,7 +85,8 @@ export async function getWebhookId(network, selectColumn) {
       ORDER BY created_at DESC
       LIMIT 1`, [network]);
     if (rows.length === 0) {
-        throw new Error(`No active webhook configured`);
+        // throw new Error(`No active webhook configured`);
+        return '';
     }
     const webhookId = rows[0]?.[selectColumn];
     return webhookId;

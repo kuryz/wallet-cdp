@@ -143,7 +143,8 @@ export async function getWebhookId(
       );
     
       if (rows.length === 0) {
-        throw new Error(`No active webhook configured`);
+        // throw new Error(`No active webhook configured`);
+        return '';
       }
     
       const webhookId = rows[0]?.[selectColumn] as string;
