@@ -1,0 +1,42 @@
+
+[2026-04-16T14:50:42.143Z]
+Context: POST /accounts/evm
+DNS resolution failed. Please check your network connection.
+NetworkError: DNS resolution failed. Please check your network connection.
+    at cdpApiClient (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/openapi-client/cdpApiClient.js:92:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async EvmClient._createAccountInternal (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/client/evm/evm.js:1232:32)
+    at async executeWithRecursionProtection (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:143:16)
+    at async EvmClient.<anonymous> (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:186:28)
+    at async executeWithRecursionProtection (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:143:16)
+    at async EvmClient.<anonymous> (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:186:28)
+    at async file:///C:/xampp/htdocs/wallet-cdp/main.ts:98:23
+----------------------------------------
+
+[2026-04-16T15:16:07.081Z]
+Context: POST /accounts/evm
+DNS resolution failed. Please check your network connection.
+NetworkError: DNS resolution failed. Please check your network connection.
+    at cdpApiClient (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/openapi-client/cdpApiClient.js:92:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async EvmClient._createAccountInternal (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/client/evm/evm.js:1232:32)
+    at async executeWithRecursionProtection (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:143:16)
+    at async EvmClient.<anonymous> (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:186:28)
+    at async executeWithRecursionProtection (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:143:16)
+    at async EvmClient.<anonymous> (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:186:28)
+    at async file:///C:/xampp/htdocs/wallet-cdp/main.ts:98:23
+----------------------------------------
+
+[2026-04-16T17:14:55.646Z]
+Context: POST /accounts/evm
+DNS resolution failed. Please check your network connection.
+NetworkError: DNS resolution failed. Please check your network connection.
+    at cdpApiClient (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/openapi-client/cdpApiClient.js:92:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async EvmClient._createAccountInternal (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/client/evm/evm.js:1232:32)
+    at async executeWithRecursionProtection (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:143:16)
+    at async EvmClient.<anonymous> (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:186:28)
+    at async executeWithRecursionProtection (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:143:16)
+    at async EvmClient.<anonymous> (file:///C:/xampp/htdocs/wallet-cdp/node_modules/@coinbase/cdp-sdk/_esm/analytics.js:186:28)
+    at async file:///C:/xampp/htdocs/wallet-cdp/main.ts:98:23
+----------------------------------------

@@ -105,11 +105,13 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
         await storeAddress(user, owner.address, account.address, "evm");
         /**
          * register by the specified networks
-         * ETH_MAINNET, BSC, polygon, base
+         * avalanche, Optim, polygon, base
          */
         await Promise.all([
-            registerAddressWebhook(owner.address, 'ETH_MAINNET'),
-            registerAddressWebhook(owner.address, 'BNB_MAINNET'),
+            // registerAddressWebhook(owner.address, 'ETH_MAINNET'),
+            // registerAddressWebhook(owner.address, 'BNB_MAINNET'),
+            registerAddressWebhook(owner.address, 'OPT_MAINNET'),
+            registerAddressWebhook(owner.address, 'AVAX_MAINNET'),
             registerAddressWebhook(owner.address, 'POLYGON_MAINNET'),
             registerAddressWebhook(owner.address, 'BASE_MAINNET'),
         ]);
@@ -202,14 +204,11 @@ const transferAbi = [{
 app.post("/cdp-withdraw-process", apiKeyAuth, async (req, res) => {
     try {
         const { token, network } = req.body;
-        // const token = "USDC";
-        // const network = "base";
-        // const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
         if (!token || !network) {
             throw new Error("token and network are required");
         }
         if (!isToken(token) || !isNetwork(network)) {
-            throw new Error("token and network are required");
+            throw new Error("Invalid token or network");
         }
         const { tokenAddress, paymasterUrl } = getTokenAndPaymaster(token, network);
         // const usdc_account ="0x9C7f69a7963257a34193e689a935649F4e25D2aa";
@@ -291,52 +290,6 @@ app.post("/register-webhook", apiKeyAuth, async (req, res) => {
         res.status(500).json({ error: `Failed to register webhook.` });
     }
 });
-/**
- * Register webhook with CDP programmatically
- */
-/* async function registerCdpWebhook() {
-  const url = "https://api.cdp.coinbase.com/platform/v2/data/webhooks/subscriptions";
-  const body = {
-    description: "Deposit notifications",
-    eventTypes: ["onchain.activity.detected"],
-    target: { url: "https://wallet.finplab.com/webhooks/cdp", method: "POST" },
-    labels: {},
-    isEnabled: true,
-  };
-
-  // Sign request
-  const timestamp = Math.floor(Date.now() / 1000);
-  const payload = `${timestamp}POST/platform/v2/data/webhooks/subscriptions${JSON.stringify(body)}`;
-  const signature = crypto
-    .createHmac("sha256", requiredEnv("CDP_API_KEY_SECRET"))
-    .update(payload)
-    .digest("hex");
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "CB-ACCESS-KEY": requiredEnv("CDP_API_KEY_ID"),
-        "CB-ACCESS-SIGN": signature,
-        "CB-ACCESS-TIMESTAMP": String(timestamp),
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = (await res.json()) as CdpWebhookResponse;
-    console.log("CDP webhook registration response:", data);
-
-    // Save webhook secret to .env or DB
-    if (data?.metadata?.secret) {
-      console.log("Save this CDP_WEBHOOK_SECRET:", data.metadata.secret);
-    }
-    return data;
-  } catch (err) {
-    console.error("Failed to register CDP webhook:", err);
-    logError(err, 'webhook');
-  }
-} */
 app.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
 });
