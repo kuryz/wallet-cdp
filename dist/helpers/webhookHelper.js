@@ -94,4 +94,10 @@ export function getTokenAndPaymaster(token, network) {
         paymasterUrl,
     };
 }
+export function isToken(x) {
+    return ["USDC", "USDT"].includes(x);
+}
+export function isNetwork(x) {
+    return ["base", "polygon", "arbitrum", "optimism", "avalanche"].includes(x);
+}
 //# sourceMappingURL=webhookHelper.js.map

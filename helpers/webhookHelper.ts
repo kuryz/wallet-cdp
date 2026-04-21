@@ -133,3 +133,11 @@ export function getTokenAndPaymaster(
     paymasterUrl,
   };
 }
+
+export function isToken(x: any): x is Token {
+  return ["USDC", "USDT"].includes(x);
+}
+
+export function isNetwork(x: any): x is Network {
+  return ["base", "polygon", "arbitrum", "optimism", "avalanche"].includes(x);
+}

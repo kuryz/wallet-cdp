@@ -10,7 +10,7 @@ import { logError } from "./logger.js";
 import webhookRouter from "./webhooks/cdp.js";
 import { registerAddresses, createWebhook, updateWebhookAddresses } from './alchemy/addressRegistry.js';
 import { getWebhookId } from './alchemy/webhook.js'
-import { getTokenAndPaymaster, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
+import { getTokenAndPaymaster, isNetwork, isToken, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
 import { encodeFunctionData } from 'viem';
 // dotenv.config();
 
@@ -267,9 +267,16 @@ const transferAbi = [{
 
 app.post("/cdp-withdraw-process", apiKeyAuth, async (req: Request, res: Response) => {
   try {
-    const token = "USDC";
-    const network = "base";
+    const { token, network } = req.body;
+    // const token = "USDC";
+    // const network = "base";
     // const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+    if (!token || !network) {
+      throw new Error("token and network are required");
+    }
+    if (!isToken(token) || !isNetwork(network)) {
+      throw new Error("token and network are required");
+    }
     const { tokenAddress, paymasterUrl } = getTokenAndPaymaster(
       token,
       network
