@@ -9,9 +9,9 @@ import { logError } from "./logger.js";
 // import { RowDataPacket } from "mysql2";
 import webhookRouter from "./webhooks/cdp.js";
 import { registerAddresses, createWebhook, updateWebhookAddresses } from './alchemy/addressRegistry.js';
-import { createAlchemyWebhook, getWebhookId, insertWebhookId } from './alchemy/webhook.js'
-import { encodeTransfer, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
-import { ethers } from "ethers";
+import { getWebhookId } from './alchemy/webhook.js'
+import { getTokenAndPaymaster, registerAddressWebhook, registerWebhook } from "./helpers/webhookHelper.js";
+import { encodeFunctionData } from 'viem';
 // dotenv.config();
 
 const app = express();
@@ -254,43 +254,81 @@ app.post("/get-token-balance", apiKeyAuth, async (req: Request, res: Response) =
 /**
  * withdrawal logic
  */
+const transferAbi = [{
+  inputs: [
+    { name: 'to', type: 'address' },
+    { name: 'value', type: 'uint256' }
+  ],
+  name: 'transfer',
+  outputs: [{ name: '', type: 'bool' }],
+  stateMutability: 'nonpayable',
+  type: 'function'
+}] as const;
+
 app.post("/cdp-withdraw-process", apiKeyAuth, async (req: Request, res: Response) => {
   try {
-    const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-    const usdc_account ="0x9C7f69a7963257a34193e689a935649F4e25D2aa";
+    const token = "USDC";
+    const network = "base";
+    // const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+    const { tokenAddress, paymasterUrl } = getTokenAndPaymaster(
+      token,
+      network
+    );
+    // const usdc_account ="0x9C7f69a7963257a34193e689a935649F4e25D2aa";
 
-    const destinationAddress = "0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5";
-    const amountToSend = '0.05';
     const accountsResult = await cdp.evm.listAccounts();
     const owner = accountsResult.accounts[8];
     if (!owner) throw new Error('No owner account found')
 
       const smartAccountsResult = await cdp.evm.listSmartAccounts();
-      const smartAccount = smartAccountsResult.accounts[3]; // index 3 as you wanted
+      const smartAccount = smartAccountsResult.accounts[3]; // index 3  = usdc_account
       if (!smartAccount) throw new Error('Smart account not found');
 
       const smartAccountSDK = await cdp.evm.getSmartAccount({
-        address: smartAccount.address, // already `0x${string}`
-        owner: owner,                  // owner account object
+        address: smartAccount.address,
+        owner: owner,
       });
+    
+    const destinationAddress = '0xfF4ADfc8Dd4285aCae4390cABb6Cc7991C2f14D5';
+    const amountToSend = '0.05';           // 0.05 USDC
+    const decimals = 6;                    // USDC has 6 decimals
+    const amountInSmallestUnit = BigInt(Math.floor(parseFloat(amountToSend) * 10 ** decimals));
 
+    // Encode the transfer function call
+    const callData = encodeFunctionData({
+      abi: transferAbi,
+      functionName: 'transfer',
+      args: [destinationAddress, amountInSmallestUnit],
+    });
+    //polygon network: https://api.pimlico.io/v2/137/rpc?apikey=pim_eMsyu12RYuDfnEQSuj1C9P
     const txResult = await cdp.evm.sendUserOperation({
-      network: "base",
+      network: network,
       smartAccount: smartAccountSDK,
-      paymasterUrl: "https://api.developer.coinbase.com/rpc/v1/base/LCT7r5ZaPObDm4t7oDDhe8fSJQgAJNEe",
+      paymasterUrl: paymasterUrl,
       calls: [{
-        to: USDC_BASE,
-        data: encodeTransfer(destinationAddress, amountToSend),
-      }],
+          to: tokenAddress,
+          value: 0n,     // matches "value": "0" in curl
+          data: callData,
+          // overrideGasLimit: 100000n   // optional; if needed, uncomment
+        }],
     });
 
     console.log(`\n✅ Transfer submitted!`);
     console.log(`   Transaction Hash: ${txResult}`);
-  } catch (err) {
+    return res.status(200).json({
+      success: true,
+      txHash: txResult,
+      message: "Transfer submitted successfully"
+    });
+  } catch (err: any) {
     console.error("Error occured:", err);
-    res.status(500).json({ error: `Failed to process.` });
+    res.status(500).json({ 
+      success: false,
+      error: err.message || "Failed to process."
+    });
   }
 });
+
 
 app.post("cdp/get-address", apiKeyAuth, async (req: Request, res: Response) =>{
   
