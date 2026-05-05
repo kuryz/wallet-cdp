@@ -155,7 +155,7 @@ app.post(
        */
 
       await Promise.all([
-        // registerAddressWebhook(owner.address, 'ETH_MAINNET'),
+        registerAddressWebhook(account.address, 'ETH_MAINNET'),
         // registerAddressWebhook(owner.address, 'BNB_MAINNET'),
         registerAddressWebhook(account.address, 'OPT_MAINNET'),
         registerAddressWebhook(account.address, 'AVAX_MAINNET'),
