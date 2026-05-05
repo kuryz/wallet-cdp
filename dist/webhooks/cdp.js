@@ -27,7 +27,7 @@ router.post("/cdp", async (req, res) => {
             if (processedRows.length > 0)
                 continue;
             // 2️⃣ Lookup user
-            const [userRows] = await db.execute("SELECT id FROM deposit_addresses WHERE address = ? OR smart_address = ?", [address, address]);
+            const [userRows] = await db.execute("SELECT user_id FROM deposit_addresses WHERE address = ? OR smart_address = ?", [address, address]);
             if (userRows.length === 0)
                 continue;
             const userId = userRows[0]?.id;

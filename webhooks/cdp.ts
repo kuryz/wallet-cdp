@@ -106,7 +106,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
 
       // 2️⃣ Lookup user
       const [userRows] = await db.execute<DepositAddressRow[]>(
-        "SELECT id FROM deposit_addresses WHERE address = ? OR smart_address = ?",
+        "SELECT user_id FROM deposit_addresses WHERE address = ? OR smart_address = ?",
         [address, address]
       );
       if (userRows.length === 0) continue;
