@@ -5,6 +5,8 @@ import { RowDataPacket } from "mysql2";
 
 const router = express.Router();
 
+const callbackUrl = process.env.FINPESA_CALLBACK_URL;
+
 interface DepositAddressRow extends RowDataPacket {
   user_id: number;
 }
@@ -132,6 +134,37 @@ router.post("/cdp", async (req: Request, res: Response) => {
         "INSERT INTO processed_transactions (tx_hash, chain, address, amount, sd_data, meta_data) VALUES (?, ?, ?, ?, ?, ?)",
         [txHash, network, address, amount, JSON.stringify(result), JSON.stringify(webhookEvent)]
       );
+
+      // ✅ 5️⃣ PLACE FETCH HERE
+      if (!callbackUrl) {
+        console.error("FINPESA_CALLBACK_URL is not set");
+      } else {
+        fetch(callbackUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.API_KEY || "",
+          },
+          body: JSON.stringify({
+            userId,
+            amount,
+            address,
+            network,
+            txHash,
+            data: result,
+          }),
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              console.error(`Callback failed (${res.status}):`, await res.text());
+            } else {
+              console.log(`Callback sent for tx: ${txHash}`);
+            }
+          })
+          .catch((err) => {
+            console.error("Callback error:", err);
+          });
+      }
 
       console.log(`Processed deposit of ${amount} on ${network} to user ${userId} (tx: ${txHash})`);
     }
