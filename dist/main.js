@@ -110,10 +110,10 @@ app.post("/accounts/evm", apiKeyAuth, async (_req, res) => {
         await Promise.all([
             // registerAddressWebhook(owner.address, 'ETH_MAINNET'),
             // registerAddressWebhook(owner.address, 'BNB_MAINNET'),
-            registerAddressWebhook(owner.address, 'OPT_MAINNET'),
-            registerAddressWebhook(owner.address, 'AVAX_MAINNET'),
-            registerAddressWebhook(owner.address, 'POLYGON_MAINNET'),
-            registerAddressWebhook(owner.address, 'BASE_MAINNET'),
+            registerAddressWebhook(account.address, 'OPT_MAINNET'),
+            registerAddressWebhook(account.address, 'AVAX_MAINNET'),
+            registerAddressWebhook(account.address, 'POLYGON_MAINNET'),
+            registerAddressWebhook(account.address, 'BASE_MAINNET'),
         ]);
         res.json({
             address: account.address,
