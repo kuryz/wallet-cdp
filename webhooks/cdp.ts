@@ -103,11 +103,13 @@ router.post("/cdp", async (req: Request, res: Response) => {
         [txHash]
       );
       if (processedRows.length > 0) continue;
+      
+      const normalizedAddress = address.toLowerCase();
 
       // 2️⃣ Lookup user
       const [userRows] = await db.execute<DepositAddressRow[]>(
-        "SELECT user_id FROM deposit_addresses WHERE address = ? OR smart_address = ?",
-        [address, address]
+        "SELECT user_id FROM deposit_addresses WHERE LOWER(address) = LOWER(?) OR LOWER(smart_address) = LOWER(?)",
+        [normalizedAddress, normalizedAddress]
       );
       if (userRows.length === 0) continue;
 

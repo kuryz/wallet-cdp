@@ -15,6 +15,7 @@
   "type": "module",
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.48.0",
+    "bs58": "^6.0.0",
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
     "express": "^5.2.1",
