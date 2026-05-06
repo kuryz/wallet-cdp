@@ -31,7 +31,7 @@ router.post("/cdp", async (req, res) => {
             const [userRows] = await db.execute("SELECT user_id FROM deposit_addresses WHERE LOWER(address) = LOWER(?) OR LOWER(smart_address) = LOWER(?)", [normalizedAddress, normalizedAddress]);
             if (userRows.length === 0)
                 continue;
-            const userId = userRows[0]?.id;
+            const userId = userRows[0]?.user_id;
             // Credit user balance (optional)
             // await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", [amount, userId]);
             // filter data
@@ -80,6 +80,7 @@ router.post("/cdp", async (req, res) => {
                     console.error("Callback error:", err);
                 });
             }
+            console.log(callbackUrl);
             console.log(`Processed deposit of ${amount} on ${network} to user ${userId} (tx: ${txHash})`);
         }
         res.sendStatus(200);

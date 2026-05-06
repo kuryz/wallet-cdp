@@ -113,7 +113,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
       );
       if (userRows.length === 0) continue;
 
-      const userId = userRows[0]?.id;
+      const userId = userRows[0]?.user_id;
 
       // Credit user balance (optional)
       // await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", [amount, userId]);
@@ -167,7 +167,7 @@ router.post("/cdp", async (req: Request, res: Response) => {
             console.error("Callback error:", err);
           });
       }
-
+      console.log(callbackUrl);
       console.log(`Processed deposit of ${amount} on ${network} to user ${userId} (tx: ${txHash})`);
     }
 
